@@ -146,7 +146,7 @@ python3 "$STATUS" --json; echo "exit=$?"
 
 | Exit | State | What to do |
 |---|---|---|
-| 0 | configured | Proceed. If `userLoggedIn:false`, only `--as bot` work is possible. |
+| 0 | configured | App configuration exists. Check the intended user with `whoami` and, when needed, `auth status --json --verify`; configuration alone does not prove authentication or resource access. |
 | 3 | not installed | `npx -y @larksuite/cli@latest install` (takes several minutes) |
 | 4 | not configured | Local workspace → run `lark_setup.py`. Agent workspace → `lark-cli config bind` |
 | 5 | unparseable | Inspect `lark-cli config show` manually |
@@ -159,6 +159,8 @@ lark-cli doctor
 ```
 
 > **Why a script and not a grep?** `lark-cli config show` emits **`appId`** (camelCase). Matching on `app_id` never succeeds, which silently reports "not configured" and re-triggers authorization on every run. The script parses JSON and accepts both spellings. Never reintroduce a `grep "app_id"` check.
+
+Compatibility note: the bundled helper may report `userLoggedIn:false` for `needs_refresh`. This is not evidence that only bot access is available. Check the effective user and actual authentication result before requesting another login; do not switch identity to work around resource denial.
 
 **Before you trigger any authorization prompt**, work out which scopes the task actually needs and check
 whether they are already granted. Asking for a whole domain because it is convenient pushes the user into
@@ -238,7 +240,7 @@ lark-cli auth login --device-code <code>    # finish a split-flow login
 lark-cli auth logout --json                 # clears LOCAL session only
 ```
 
-`auth login` **requires** a scope selector (`--domain`, `--scope`, or `--recommend`). Scopes accumulate across logins, so you can start with three and add more later — nothing already granted is lost.
+Always pass the task's explicit `--scope` when initiating login. CLI 1.0.97 help states that bare `auth login` requests all known business domains, and `--recommend` is equivalent to `--domain all`. Older versions can behave differently; verify local `auth login --help` rather than assuming a selector is syntactically required. Use `auth check` to request only missing scopes.
 
 Read `identity`, `verified`, `identities.user.status`, `identities.user.userName`, `identities.user.tokenStatus` from `auth status`.
 
@@ -282,13 +284,7 @@ lark-cli auth login --domain base \
 
 `--exclude` subtracts from `--domain`; both combine additively with `--scope`.
 
-**`--recommend` is not a minimal option — it is one of the broadest.** The official README describes it
-as "recommended auto-approval scopes", which reads like a small safe subset. It is not. The CLI's embedded
-scope catalogue marks **310** scopes as `recommend: true`, spanning `im` (51), `base` (43), `directory`
-(33), `docs` (31), plus `approval`, `calendar`, `contact`, `minutes` and more — including **13 delete
-scopes** (`base:record:delete`, `base:role:delete`, `base:workflow:delete`, `im:chat:delete`,
-`space:document:delete`, …). It therefore requests *more* than `--domain base`, not less. Reasonable for a
-long-lived personal setup where the user knowingly authorizes broadly; wrong for "read one table".
+**`--recommend` is not a minimal option.** In CLI 1.0.97 it is equivalent to `--domain all`; the exact scope catalogue varies by version. Use broad authorization only when the user explicitly requests it, not for a single document or table.
 
 **`--domain all` is a last resort, never a starting point.** It requests scopes across all 23 domains —
 mail, calendar, attendance, approval, contact — for a task that touches one. Use it only when the user

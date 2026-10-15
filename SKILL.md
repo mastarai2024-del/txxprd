@@ -1,64 +1,60 @@
 ---
 name: txxprd
-description: 编写/更新飞书 PRD（产品需求文档）的工作流：按 PRD 模板结构定位章节、往功能说明表增改功能行、插入或更新产品流程图（飞书画板）、插入交互原型图与规则表格。当用户要求"写进 PRD / 需求文档 / 飞书文档"、"更新文档里的流程图/原型图/功能说明"、"把 XX 加到功能说明里"时使用。
-agent_created: true
+description: 编写、更新和评审飞书 PRD：按现有章节维护功能说明表、流程图、原型图与验收标准；支持根据文档评论修改正文，或只留下评审评论。用户要求把需求写进飞书 PRD、更新图表、按评论修订或在文档中评审时使用。
+metadata:
+  agent_created: "true"
+  source: "https://github.com/mastarai2024-del/txxprd"
 ---
 
-# txxprd — PRD 飞书文档写入
+# txxprd — 飞书 PRD 编写与评审
 
-把产品需求内容按规范写入/更新飞书 PRD 文档（基于 lark-cli 的 docx 块级操作）。
+使用 lark-cli 按现有模板维护飞书 PRD。功能规则、流程分支、原型状态和验收项应相互对应，未确认的产品行为保留为待确认。
 
-## 目标文档
+## 先确定工作方式
 
-- 把本节替换为你的 PRD 文档信息（技能工作时以此为准）：
-  - URL：`https://<你的租户>.feishu.cn/wiki/<node_token>`
-  - docx token：`<obj_token>`（解析：`lark-cli wiki +node-get --as user --node-token "<url>"`）
-- 权限报错（131006 / 3380004）说明当前账号无此文档权限——换文档或加权限，不要反复重试。
+| 用户请求 | 执行方式 |
+|---|---|
+| 新写需求或更新功能、流程、原型 | 按下文正文编辑流程执行；从零梳理时可结合环境中已有的 `prd-development`，已有明确内容直接处理 |
+| 根据评论修改文档 | 读 [评论协作](references/document-review.md)，定位评论后局部修改正文 |
+| 只评审、在文档中留意见 | 读 [评论协作](references/document-review.md)，创建局部评论，保留正文 |
+| 看看文档、给建议 | 读取后在当前对话反馈；只有明确要求在飞书留评论时才发表 |
+| 操作多维表格字段或记录 | 转交适配的 Base 工具或已安装的 `feishu-bitable-browser`，不套用文档块编辑流程 |
 
-## 环境自举（新电脑 / 未装飞书套件时）
+## 目标与环境
 
-本技能自带飞书 CLI 套件**完整副本**（`vendor/lark-unified/`，飞书套件 v2.3.0），无需另装飞书套件。新电脑首次使用按此顺序：
+- 以本次任务提供的文档链接为准，读取标题和资源类型确认目标。项目术语、章节及资产路径可记录在项目自己的上下文文件中；[项目上下文模板](references/project-context.md) 仅供复制使用，占位链接不能用于真实操作。
+- Wiki 链接可用 `lark-cli wiki +node-get --as user --node-token "<url>"` 解析；核对底层类型，Wiki token 与 docx token 不混用。普通 docx 链接可直接传入文档命令。
+- 首次运行、身份不明或权限报错时，按 [身份、授权与诊断](references/auth-and-diagnostics.md) 检查安装、profile、用户及权限。已有有效配置直接复用。
+- 涉及新命令时先查本机 `--help`，复杂格式读 `lark-cli skills read` 返回的官方参考。随附套件是版本快照；参数、权限和结果结构以实际 CLI 版本为准。
+- 普通用户文档操作显式 `--as user`；多应用时，对已确认的 profile 在每条命令传 `--profile`。目标身份不明时先核对，不通过轮换账号或 bot 试探访问权。
 
-1. **检查状态**：`python3 vendor/lark-unified/scripts/lark_status.py --json`
-   - exit 0 = 可用；exit 3 = CLI 未安装；exit 4 = 未配置；exit 5 = 输出异常（手动看 `lark-cli config show`）
-2. **安装 CLI**（exit 3 时）：`npx -y @larksuite/cli@latest install`（需 Node 18+，安装需数分钟）
-3. **配置与授权**（exit 4 时）：按 `vendor/lark-unified/SKILL.md` 第 2 节的 split 流程，关键点：
-   - 应用注册：`python3 vendor/lark-unified/scripts/lark_setup.py --print-url-only` → 授权链接发给用户 → **结束回合**等用户确认 → 再执行 `--device-code <code>`
-   - 用户登录：`lark-cli auth login --scope "wiki:node:read wiki:node:retrieve docx:document:readonly docx:document:write_only docs:document.media:upload space:document:delete" --no-wait --json` → 链接发给用户 → 确认后 `lark-cli auth login --device-code <code>`
-   - ⚠️ 授权链接必须作为该回合的**最后一条消息**发给用户，不要同回合轮询/阻塞
-4. **验证**：`lark-cli whoami`，再直接 fetch 目标 PRD 文档确认权限
-5. 完整命令、权限范围与排错：`vendor/lark-unified/SKILL.md` 及 `vendor/lark-unified/references/`（lark-doc / lark-wiki / lark-drive / api_reference 等）
+## 正文编辑流程
 
-## 核心工作流（每次改动按此执行）
+1. **读取并留存旧值。** 先 `docs +fetch --scope outline --detail with-ids`，再读目标章节。编辑前将受影响块、必要样式及修订信息保存在本机私有任务目录；涉及整表替换时备份完整表格。写入前核对最新内容，保留用户并行编辑。
+2. **定位最小改动范围。** 优先使用章节或具体块。若用范围读取定位章节末尾，检查返回的末块是否属于下一章节，不能直接把下一节标题作为本节末尾。单处文本修改可用 `str_replace`；含图片、表格或多个段落时按块处理。
+3. **构造内容。** 复杂内容用 DocxXML，普通 Markdown 内容用匹配的格式参数，多行内容放本地文件后用 `@file` 传入。命令与语法见 [文档操作手册](references/feishu-docx-cli.md)。沿用用户模板；需要重建表格时保留列宽、高亮、链接及图文对应。
+4. **验证新写法。** 首次使用整表重建、画板或图片入格等复杂写法，先在本次授权范围内的测试文档验证结构与渲染。`--dry-run` 仅预览请求，不能证明有权限或能正确显示。普通小范围文字修订无需每次新建测试文档。
+5. **应用并回读。** 用 `block_insert_after`、`block_replace`、`block_move_after` 或必要的 `block_delete` 完成局部改动。结构变化后重新 fetch 再用 block id。改完回读核对文字、结构、媒体及未涉及内容；图表还需检查预览。
+6. **交付与清理。** 给出文档链接、实际变更和未完成项。保留 HTML、Mermaid 源及交付图片。清理仅限本次产生且不再需要的临时文件；删除云端临时文档须已有对应授权，保留时交代链接。
 
-1. **先读现状**：`docs +fetch --scope outline --detail with-ids` 拿章节 block id；再读目标章节 `--scope section --start-block-id <id> --detail with-ids`。
-   要插到某小节末尾时，用 `--scope range --start-block-id <本节标题> --end-block-id <下一节标题> --detail with-ids` 取该节最后一个块的 id 作锚点。
-   ⚠️ 用户可能已手动编辑过内容，以最新读取为准，不要覆盖用户编辑。
-2. **构造内容**：XML（默认，精确控制）或 markdown（纯文本追加）；语法见 `references/feishu-docx-cli.md`；复杂内容先读官方指南 `lark-cli skills read lark-doc/references/lark-doc-xml.md`。
-3. **临时文档验证**：新写法（整表重建、画板、图片入格等）先在临时文档验证——
-   `docs +create`（标题写「临时测试-请忽略」）→ 插入 → fetch 复核（画板用 `whiteboard +export` 导出预览检查）→ 通过后才改正式文档 → `drive +delete --yes` 删临时文档。
-4. **应用**：`block_insert_after`（插入）/ `block_replace`（整块替换）/ `block_delete`（删除，多 id 逗号分隔）/ `block_move_after`（移动定位）。
-5. **验证**：改完 `fetch` 复核结构、文字与图片 token。
-6. **清理**：临时文件、临时文档、预览图。
+只在用户要求重写整篇时考虑 `overwrite`；它可能丢失未涉及的富文本内容。写操作超时或结果未知时，先查询已提交内容再判断是否重试，避免重复插入。权限诊断的停止条件见诊断手册。
 
 ## 内容规范
 
-- **功能说明表**：5 列（序号 / 模块 / 功能 / 功能详细说明 / 交互图）；「功能详细说明」用嵌套编号列表（1. / a. / i.）；「交互图」列放图片缩略图（宽 160px，入格方式见技术手册）。
-- **产品流程图**：用**飞书画板**（`<whiteboard type="mermaid">`）；建议把 mermaid 源文件保存在项目里（如 `build/flow.mmd`），改流程后重新插入画板。
-- **交互原型图**：把 HTML 原型渲染成 PNG（脚本 `scripts/render-html.cjs`）再插入。
-- **项目口径**（术语 / 文案 / 本地资产）：在 `references/project-context.md` 中维护。
+- **功能说明表**：无既有模板时建议 5 列（序号 / 模块 / 功能 / 功能详细说明 / 交互图）；说明用嵌套编号列表，图片宽度按列宽调整，窄列可从 160px 起测。
+- **产品流程图**：优先使用飞书原生画板 `<whiteboard type="mermaid">`，保留 `.mmd` 源。检查判断分支、异常路径与功能规则是否一致。
+- **交互原型图**：用 [render-html.cjs](scripts/render-html.cjs) 将 HTML 渲染为 PNG，插入前目视检查；脚本依赖 `puppeteer-core` 和 macOS 的 Google Chrome，其他环境需先适配浏览器路径。
+- **验收标准**：按功能写清前置条件、操作及可观察结果，覆盖已有需求中的失败和边界情况；未确认阈值、责任主体或产品行为不补造。
+- **Markdown 转换**：检查表格、代码块、图片、分栏及评论定位，不承诺格式完全无损。
 
-## 关键坑（踩过的）
+## 验证口径
 
-- 上传本地图片必须用 `<img path="@./相对路径"/>`；**不要用 `src=token` 复制已有图片**（元数据会写成 test.jpg / jpeg）。
-- `media-insert` 只能追加到文末；要放到指定位置：先 `media-insert`，再 `block_move_after` 移到锚点后。
-- 本地文件路径一律 cwd 相对；任何写操作后受影响 block id 失效，链式编辑前重新 fetch。
-- 画板导出预览是 **jpg**（`--output ./x.jpg`，扩展名不匹配会报错）。
-- 所有命令建议带 `LARKSUITE_CLI_NO_UPDATE_NOTIFIER=1 LARKSUITE_CLI_NO_SKILLS_NOTIFIER=1`，并显式 `--as user`。
+安装可用、配置存在、登录有效、文档可读、写入回读成功、视觉检查通过分别报告。一次纯文本测试不能代表表格、画板或评论全部可用；确认可编辑需要真实写入并回读。用户要求可恢复的编辑测试时，仅操作本次新增的测试块，回读后移除，并核验原内容及测试块清理结果。
 
-## 资源
+## 按需参考
 
-- `references/feishu-docx-cli.md` — lark-cli 文档操作技术手册（命令表 / XML 语法 / 排错）
-- `references/project-context.md` — 项目上下文模板（文档信息 / 口径 / 本地资产）
-- `scripts/render-html.cjs` — HTML 原型 → PNG 渲染脚本（puppeteer-core）
-- `vendor/lark-unified/` — 飞书 CLI 套件完整副本（v2.3.0：SKILL.md + references + scripts + meegle 子技能），供新电脑自举与全套命令参考
+- [身份、授权与诊断](references/auth-and-diagnostics.md)：首次配置、最小权限、账号核对与错误分流。
+- [评论协作](references/document-review.md)：按评论修订、只评审、评论定位及回读验证。
+- [文档操作手册](references/feishu-docx-cli.md)：命令、DocxXML、媒体与格式排错。
+- [项目上下文模板](references/project-context.md)：复制到具体项目后维护约定。
+- [飞书套件](vendor/lark-unified/SKILL.md)：基于 v2.3.0 的随附参考，保留自举脚本；已对登录默认行为和状态判断补充兼容说明。
