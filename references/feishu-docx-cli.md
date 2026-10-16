@@ -34,6 +34,14 @@
 
 评论读取、定位、发表与验证见 [评论协作](document-review.md)。`str_replace` 仅用于已确认唯一的简单文本；多块或媒体内容用块编辑。范围操作前检查起止边界，避免包含下一章节。预览请求可加 `--dry-run`，不据此声称服务端已写入。
 
+## 表格局部修订
+
+只调整详细说明时，读取目标单元格内真实块 id。一个段落用 `--block-id`；多个同级段落可用 `--start-block-id` 与 `--end-block-id` 替换为完整嵌套列表。起止块须同属该单元格，不跨单元格或误含下一节。这样保留原图片、列宽和其他列，避免无必要的媒体重传。
+
+写前比较目标块与备份，传入刚读取的 `--revision-id`；冲突或超时先回读。每次结构变化后重新定位 id。写后核对新文本、列表层级与编号，并比较未修改列及资源块；整表确需重建时仍按上文保留全部结构和样式。
+
+原生验收项使用 `<checkbox done="false">…</checkbox>`。新写法可在本次获准的测试范围验证 `false → true → false`，回读确认状态；只清理本次新增的测试块并复核原内容。不要改动已有人工验收结果。
+
 ## DocxXML 语法要点
 
 - 块级标签：`<p> <h1-h9> <blockquote> <hr> <img> <table> <ol>/<ul> <callout> <grid> <whiteboard> <checkbox> <pre>`
@@ -42,6 +50,7 @@
   - 单元格内容放在 `<p>` 等子块里；表头背景 `background-color="rgb(242,243,245)"`（原样回写即可保留）
   - 重建整表用 `block_replace`，把完整 `<table>…</table>` 作为 content
 - **嵌套编号列表**：子列表放 `<li>` 内——`<ol><li>父<ol><li>子<ol><li>孙</li></ol></li></ol></li></ol>`（seq 自动生成，不用手写）
+- **HTML 附件**：`<figure view-type="Preview"><source path="@./prototype.html" name="prototype.html"/></figure>`。上传后回读名称、大小及资源信息，再在飞书实际预览中操作关键状态；本地可打开不能替代附件验证。
 - **本地图片**：`<img path="@./x.png" width="160"/>`（写入时自动上传；支持放在表格单元格内）
 - **画板**：`<whiteboard type="mermaid" path="@./flow.mmd"></whiteboard>`（mermaid 转原生画板；`classDef` 颜色生效；也可 `type="svg"` / `type="blank"`）
 - 文本高亮保留：`<span background-color="rgba(255,246,122,0.8)" text-color="rgb(216,57,49)">…</span>` 可原样回写
