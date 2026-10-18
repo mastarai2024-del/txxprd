@@ -1,6 +1,6 @@
 # 身份、授权与诊断
 
-本文命令参数已对照 lark-cli 1.0.97 的本机帮助。换版本先查 `--help` 和 CLI 随附官方参考，不根据入门文章或旧快照猜测默认行为。
+本文命令参数已对照 lark-cli 1.0.90 的本机帮助（2026-10-18）。换版本先查 `--help` 和 CLI 随附官方参考，不根据入门文章或旧快照猜测默认行为。
 
 ## 检查安装与配置
 
@@ -63,10 +63,31 @@ lark-cli --profile '<profile>' docs +fetch --as user --doc '<doc_url>' --scope o
 | 上传本地图片 | `docs:document.media:upload` |
 | 创建测试文档 | `docx:document:create` |
 | 删除整份云文档 | `space:document:delete`，仅在已获删除授权且本次确需删除时申请 |
+| 导出已有画板预览 | `board:whiteboard:node:read` |
 
 普通正文编辑不默认申请整份文档删除权限，也不包含发表评论、发消息或改共享权限的授权。
 
 画板操作须区分“通过文档插入画板”“独立读写画板节点”“导出预览”这几个接口，按实际失败项诊断。额外 OAuth 链接过期时，先判断它是否仍是任务依赖；若现有授权接口和本人网页登录足以完成并验证，可继续使用。已有路径也须遵守相同资源权限，不借浏览器或换身份绕过明确的资源拒绝。权限流程完成本身不是功能完成标准。
+
+### 画板权限 99991679 的实测处理
+
+`docs +fetch` 能看到 `<whiteboard token="...">`，不代表当前用户 token 有权限读取画板节点。导出预览失败时，常见返回：
+
+```text
+code: 99991679
+type: action_privilege_required
+subject: board:whiteboard:node:read
+```
+
+处理顺序：
+
+1. 运行 `lark-cli auth check --scope 'board:whiteboard:node:read' --json` 确认是否真的缺失。
+2. 缺失时只申请这一个 scope，不使用裸 `auth login` 或 `--recommend`。
+3. 先 `--no-wait` 取得授权链接，把链接原样交给用户；本回合结束，等待用户完成授权。
+4. 用户确认后，在后续回合用同一 `device_code` 完成登录；不要把 device code 写入报告或仓库。
+5. 授权后重试导出；仍失败时区分应用后台是否开放该权限与资源本身是否可读。
+
+已知限制：应用后台未开放 `board:whiteboard:node:read` 时，补用户 OAuth 也不能成功。此时保留“画板已写入但预览未验证”的状态，不要反复登录、扩大权限或换身份。正文、图片、HTML 附件可单独完成验收。
 
 ```bash
 # 仅在确实缺少本次需要的权限时发起
@@ -76,7 +97,7 @@ lark-cli auth login --scope '<missing_scopes>' --no-wait --json
 lark-cli auth login --device-code '<device_code>'
 ```
 
-CLI 1.0.97 的帮助显示：裸 `auth login` 与 `--recommend` 都会请求全部已知业务域权限。因此本技能明确使用 `--scope`；不复制入门文档里的裸登录命令，也不把 `--recommend` 当成最小权限。
+CLI 1.0.90 的帮助显示：裸 `auth login` 与 `--recommend` 都会请求全部已知业务域权限。因此本技能明确使用 `--scope`；不复制入门文档里的裸登录命令，也不把 `--recommend` 当成最小权限。
 
 ## 错误分流与停止条件
 

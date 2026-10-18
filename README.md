@@ -15,6 +15,7 @@
 | 按评论修订 | 读取评论与回复，定位对应段落，局部修改并逐项核验 |
 | 文档评审 | 在指定块留意见，保留正文；仅要求给建议时在当前对话反馈 |
 | 权限诊断 | 区分账号、应用、登录、API 授权及资源访问权，按任务申请最小权限 |
+| 设计规范对齐 | 先读 MasterGo 设计规范、After / V2 画板和同模块状态，再制作 HTML 与截图 |
 | 写入验证 | 写前留存旧值；复杂新写法先测试；写后回读，图表另做视觉检查 |
 
 ## 安装
@@ -54,12 +55,31 @@ npx -y @larksuite/cli@latest install
 # 3. 按 references/auth-and-diagnostics.md 核对身份并按需授权
 ```
 
-配置成功不等于用户已登录或目标文档可编辑。CLI 1.0.97 的裸 `auth login` 会请求所有已知业务域权限；本技能使用明确的最小 `--scope` 和分回合授权流程，不要求为编辑正文申请整份文档删除权限。凭证由 CLI 在本机管理，不写入技能文件或仓库。
+配置成功不等于用户已登录或目标文档可编辑。CLI 1.0.90 的裸 `auth login` 会请求所有已知业务域权限；本技能使用明确的最小 `--scope` 和分回合授权流程，不要求为编辑正文申请整份文档删除权限。凭证由 CLI 在本机管理，不写入技能文件或仓库。
 
 ## 首次配置
 
 1. 对话中给出目标文档链接；以本次指定的目标为准，无需修改全局技能来绑定某一份 PRD。
 2. 将 `references/project-context.md` 复制到项目的私有目录，维护术语、模板及本地资产。真实文档内容、评论快照、身份信息和回执留在本机，不提交公开仓库。
+
+## MasterGo 设计与 MCP
+
+当项目使用 MasterGo 作为设计源时，Codex 配置：
+
+```toml
+[mcp_servers.mastergo]
+command = "npx"
+args = ["-y", "@mastergo/vibe-mcp@1.0.31", "--url=http://localhost:30678"]
+```
+
+开始任何设计图、截图或 HTML 原型前，先读 [`references/design-system-and-mastergo.md`](references/design-system-and-mastergo.md)，并在 MasterGo 中确认：
+
+1. 「设计规范」画板及节点 ID。
+2. 最终版 After / V2 画板及节点 ID。
+3. 同模块其他弹窗、表单、按钮和空状态。
+4. 明确排除 Before 和旧版画板。
+
+把结果写入项目私有 `design-baseline.md` 后再开始设计。MCP 只连接当前 MasterGo 打开的文件；调用工具时传项目绝对路径作为 `projectDir`。
 
 ## 目录结构
 
@@ -71,6 +91,7 @@ txxprd/
 │   ├── document-review.md       # 按评论修订与文档评审
 │   ├── feishu-docx-cli.md       # lark-cli 文档操作技术手册（命令表 / DocxXML 语法 / 排错）
 │   ├── prd-authoring.md        # 作者写法 / 章节取舍 / 原型状态 / 实际修订经验
+│   ├── design-system-and-mastergo.md # 设计规范 / MCP 安装 / 最终画板 / 还原与坑点
 │   └── project-context.md       # 项目上下文模板
 ├── scripts/
 │   └── render-html.cjs          # HTML 原型 → PNG 渲染（puppeteer-core）
@@ -89,10 +110,15 @@ txxprd/
 - 原型状态、最终附件、流程节点可编辑及实机后台能力分别验证；截图失败时说明视觉检查限制
 - 评论按真实 block 定位；任意文字范围的精准划词与 Markdown 格式无损转换需另行验证
 - `render-html.cjs` 依赖 `puppeteer-core` 和 macOS Google Chrome，其他环境需适配浏览器路径
+- 设计前必须读 MasterGo 设计规范与 After / V2 画板；只改按钮颜色不等于完成设计对齐
+- 设计规范与页面实际值冲突时先记录并确认，不静默创造规范外字号或圆角
+- HTML 附件替换后要下载比对 SHA-256；同一 token 的 CDN 缓存可能短暂返回旧内容
+- 批量替换飞书图片前先冻结 HTML 和全部截图；替换后不要再改 CSS
+- 画板导出缺少 `board:whiteboard:node:read` 时按最小 scope 授权；应用后台未开放时不能靠重复登录解决
 
 ## 验证范围
 
-文档命令已对照 CLI 1.0.97 的帮助及随附官方参考。安装检查、命令预览与离线校验均不能证明真实文档的写入权限；每份目标文档仍需实际读取、写后回读及必要的视觉检查。
+文档命令已对照 CLI 1.0.90 的帮助及随附官方参考（2026-10-18）。安装检查、命令预览与离线校验均不能证明真实文档的写入权限；每份目标文档仍需实际读取、写后回读及必要的视觉检查。
 
 ## 致谢 / 说明
 

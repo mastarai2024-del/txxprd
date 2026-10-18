@@ -42,6 +42,68 @@
 
 原生验收项使用 `<checkbox done="false">…</checkbox>`。新写法可在本次获准的测试范围验证 `false → true → false`，回读确认状态；只清理本次新增的测试块并复核原内容。不要改动已有人工验收结果。
 
+## 图片、附件与版本一致性
+
+### 替换表格中的图片
+
+`str_replace` 不支持资源替换。换图必须定位 `<img>` 块，使用：
+
+```bash
+lark-cli docs +update --doc <docx> --command block_replace \
+  --block-id <img_block_id> \
+  --content '<img path="@./shots/state.png" width="160"/>'
+```
+
+替换后图片块 ID、资源 token 和显示比例都会变化。不要复用旧 ID；重新 fetch 获取新块。
+
+### 替换 HTML 附件
+
+附件是 `<figure>` 块，不是普通文字。定位 `<figure>` 的 block ID，整体替换：
+
+```bash
+lark-cli docs +update --doc <docx> --command block_replace \
+  --block-id <figure_block_id> \
+  --content '<figure view-type="Preview"><source path="@./prototype.html" name="原型.html"/></figure>'
+```
+
+同一文档里替换附件后，旧 `source token` 可能仍留在文档历史版本，但当前正文只应出现新 token。回读全文确认旧 token 不再出现。
+
+### 下载资源做哈希校验
+
+```bash
+# 图片
+lark-cli docs +media-download --as user --token <image_token> --output ./verify/x.png --overwrite
+
+# HTML / 文件附件
+lark-cli docs +media-download --as user --token <source_token> --output ./verify/x.html --overwrite
+
+shasum -a 256 ./本地文件 ./verify/x.png
+```
+
+下载成功但哈希不同，先重新下载到新文件名再比对；同一 token 的 CDN 缓存可能在替换后短暂返回旧内容。用当前文档回读出的新 token 重新下载，不能拿旧 token 的缓存结果判断新附件失败。
+
+### 批量换图的顺序
+
+1. 先备份全文。
+2. 逐块替换并立即检查命令结果。
+3. 全部替换后重新 fetch。
+4. 统计图片数、附件数和 token 是否全部更新。
+5. 下载新资源做 SHA-256 比对。
+6. 目视检查最终截图。
+
+一次替换 16 张图片时，不要在旧 fetch 结果上连续使用旧 block ID；每轮结构变化后重新读取。
+
+### 冻结版本再批量替换
+
+批量替换前先把 HTML、截图和文案冻结：
+
+1. 完成最后一次 HTML 修改。
+2. 重新渲染全部截图。
+3. 确认截图、附件和设计核对表一致。
+4. 再开始替换飞书资源。
+
+如果在替换后又改了 CSS，已替换的图片会与本地新截图不一致，必须重新批量替换。不要在“只改一个字号”之后假设文档无需更新。
+
 ## DocxXML 语法要点
 
 - 块级标签：`<p> <h1-h9> <blockquote> <hr> <img> <table> <ol>/<ul> <callout> <grid> <whiteboard> <checkbox> <pre>`
@@ -65,6 +127,14 @@
 | 权限或登录错误 | 按 [身份、授权与诊断](auth-and-diagnostics.md) 区分身份、认证、scope 和资源权限 |
 | 画板导出扩展名报错 | 预览是 jpg——`--output ./x.jpg` |
 | 图片在单元格里太大 | `<img … width="160"/>` 控制显示宽（列宽约 180 时用 160） |
+| 只替换了图注，图片没变 | 改到了相邻 `<p>`，不是 `<img>` 块——重新 fetch，定位图片块 ID |
+| 附件显示旧版 | 只改了本地 HTML，没替换 `<figure>`——替换 figure 块并下载新附件校验哈希 |
+| 文档图片数量不对 | 插入和删除混用，旧块残留——统计 `<img>` / `<figure>` 数，核对表格结构 |
+| 写入返回成功但页面没更新 | 飞书渲染缓存或看错版本——回读 token、下载资源、刷新页面三方核对 |
+| 文档正文和截图版本错位 | 改了 HTML 没重渲染截图——先重渲染全部受影响状态，再替换文档 |
+| 图片显示过大或裁切 | width 与列宽不匹配——表格窄列从 160px 起测，回读 scale |
+| `media-download` 报 `unknown flag: --doc` | 该命令只需要 `--token` 和 `--output`；不要传 `--doc` |
+| 下载成功但哈希仍对应旧版 | 同一 token 的 CDN 缓存可能短暂返回旧内容——换新文件名重试下载，再比对 |
 
 ## 每个目标文档的验证链路
 
@@ -73,3 +143,16 @@
 3. 图片定位可用 `docs +media-insert` + `block_move_after`，每次结构变化后重新读取锚点。
 4. `docs +fetch` 复核内容与结构；画板用 `whiteboard +export` 检查预览，图片检查实际显示；Markdown 转换检查格式与媒体是否保留。
 5. 分别报告已通过与未验证项；保留交付源文件，仅清理已获授权的临时资源。
+
+## 设计稿与文档的版本矩阵
+
+交付前逐项确认：
+
+| 对象 | 必须一致的内容 |
+|---|---|
+| 本地 HTML | 设计 token、交互状态、文案 |
+| 本地截图 | 来自当前 HTML，尺寸和状态齐全 |
+| 飞书图片 | 与本地截图 SHA-256 一致 |
+| 飞书附件 | 与本地 HTML SHA-256 一致 |
+| 功能表 | 每行截图与功能一一对应 |
+| 设计说明 | 写清最终版画板与设计规范来源 |

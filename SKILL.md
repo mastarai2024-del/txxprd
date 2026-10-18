@@ -10,6 +10,8 @@ metadata:
 
 使用 lark-cli 按现有模板维护飞书 PRD。功能规则、流程分支、原型状态和验收项应相互对应，未确认的产品行为保留为待确认。
 
+**设计前置门禁：** 只要任务涉及交互原型、设计图、截图或 HTML 附件，动笔前必须先读 [设计系统与 MasterGo](references/design-system-and-mastergo.md)，在 MasterGo 中确认「设计规范」、最终版 After / V2 画板和同模块其他状态，并把结果写入项目私有 `design-baseline.md`。没有完成这一步，不开始画图。
+
 ## 先确定工作方式
 
 | 用户请求 | 执行方式 |
@@ -56,6 +58,7 @@ metadata:
 - **功能说明表**：无既有模板时建议 5 列（序号 / 模块 / 功能 / 功能详细说明 / 交互图）；模块定位范围，功能用一句话说明用途，详细说明按区域或规则分组，以 `1 → a → i` 编号，一条一个规则。精简重复表达，保留条件、数量、时间和异常；仅关键限制用默认黑色粗体。图片宽度按列宽调整，窄列可从 160px 起测。
 - **产品流程图**：优先使用飞书原生画板 `<whiteboard type="mermaid">`，保留 `.mmd` 源。检查判断分支、异常路径与功能规则是否一致。
 - **交互原型图**：用 [render-html.cjs](scripts/render-html.cjs) 将 HTML 渲染为 PNG，交互图列放与本行对应的具体截图；用户要求可交互文件时另插 HTML 附件。插入前目视检查；脚本依赖 `puppeteer-core` 和 macOS 的 Google Chrome，其他环境需先适配浏览器路径。
+- **设计一致性**：原型必须先对齐 MasterGo 设计规范与最终版画板；新增状态复用同模块已有组件。禁止只看单张截图就自创色板、按钮、圆角或字号。完整流程见 [设计系统与 MasterGo](references/design-system-and-mastergo.md)。
 - **验收标准**：按功能写清前置条件、操作及可观察结果，覆盖已有需求中的失败和边界情况；未确认阈值、责任主体或产品行为不补造。用户要求勾选式验收时，使用原生 `<checkbox done="false">`，文档交付不代表功能已通过实机验收。
 - **Markdown 转换**：检查表格、代码块、图片、分栏及评论定位，不承诺格式完全无损。
 
@@ -68,5 +71,6 @@ metadata:
 - [身份、授权与诊断](references/auth-and-diagnostics.md)：首次配置、最小权限、账号核对与错误分流。
 - [评论协作](references/document-review.md)：按评论修订、只评审、评论定位及回读验证。
 - [文档操作手册](references/feishu-docx-cli.md)：命令、DocxXML、媒体与格式排错。
+- [设计系统与 MasterGo](references/design-system-and-mastergo.md)：设计规范核对、MCP 安装连接、最终画板识别、HTML 还原与常见坑点。
 - [项目上下文模板](references/project-context.md)：复制到具体项目后维护约定。
 - [飞书套件](vendor/lark-unified/SKILL.md)：基于 v2.3.0 的随附参考，保留自举脚本；已对登录默认行为和状态判断补充兼容说明。

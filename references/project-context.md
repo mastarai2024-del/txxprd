@@ -28,6 +28,16 @@
 | `<项目>/build/flow.mmd` | 产品流程图 mermaid 源 |
 | `<项目>/build/table.xml` | 功能说明表全表 XML |
 | `<项目>/build/render-*.cjs` | HTML → PNG 渲染脚本 |
+| `<项目>/design-baseline.md` | MasterGo 设计规范、最终画板、token 和设计核对结果 |
+
+## 设计源（MasterGo）
+
+- 文件：`<MasterGo 文件名 / URL>`
+- 设计规范画板：`<画板名>` / `<node id>`
+- 最终版页面：`<After / V2 页面名>` / `<node id>`
+- 明确排除：`<Before / 旧版 / 废弃画板>`
+- MCP 端口：`http://localhost:30678`
+- 设计规范截图：`<本地路径>`
 
 渲染命令模板：
 
