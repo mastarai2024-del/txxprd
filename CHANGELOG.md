@@ -2,6 +2,20 @@
 
 All notable changes to this skill are documented here. Release tags follow Semantic Versioning where practical.
 
+## Unreleased - 2026-10-20
+
+### Added
+
+- Numbered native heading hierarchy for nested PRD sections, including third and deeper levels, with outline checks and examples.
+- Acceptance groups organized by page or function and mapped to feature requirements, retaining prerequisites, actions, observable results, existing check states, and unresolved rules.
+- Guidance for concrete user-facing effect descriptions and read-only field rendering, scoped to the current confirmed requirements.
+- Mandatory post-write formatting checks: table-bound records stay inside the intended rows and cells; inspect outline, row/cell structure, neighboring blocks, and browser rendering, and repair format defects before delivery.
+
+### Validation
+
+- Skill metadata, local documentation links, XML examples, and Git whitespace checks.
+- Public changes contain generic guidance only; business document content, screenshots, private identifiers, and credentials stay outside this repository.
+
 ## v1.1.0 - 2026-10-18
 
 ### Added
