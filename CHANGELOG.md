@@ -2,7 +2,7 @@
 
 All notable changes to this skill are documented here. Release tags follow Semantic Versioning where practical.
 
-## Unreleased - 2026-10-20
+## Unreleased - 2026-10-22
 
 ### Added
 
@@ -10,10 +10,15 @@ All notable changes to this skill are documented here. Release tags follow Seman
 - Acceptance groups organized by page or function and mapped to feature requirements, retaining prerequisites, actions, observable results, existing check states, and unresolved rules.
 - Guidance for concrete user-facing effect descriptions and read-only field rendering, scoped to the current confirmed requirements.
 - Mandatory post-write formatting checks: table-bound records stay inside the intended rows and cells; inspect outline, row/cell structure, neighboring blocks, and browser rendering, and repair format defects before delivery.
+- HTML attachment troubleshooting that distinguishes validation failures, blocked native submission, save results, and stale errors; confirmed host restrictions can use a shared click/Enter handler with duplicate-submit checks.
+- Guidance for scoped form drafts, separate prototype storage keys, and session-only operation when persistent storage is unavailable.
+- Real-viewport scrolling and control-reachability checks, coordinate-system distinctions, and waiting for visible lazy-loaded images before diagnosing missing media.
+- README examples and a troubleshooting section for HTML attachment previews, linked to the detailed authoring guide.
 
 ### Validation
 
 - Skill metadata, local documentation links, XML examples, and Git whitespace checks.
+- Official skill validation and relative-link/heading-anchor checks for the 2026-10-22 documentation update; no business-service operations were repeated while preparing it.
 - Public changes contain generic guidance only; business document content, screenshots, private identifiers, and credentials stay outside this repository.
 
 ## v1.1.0 - 2026-10-18
