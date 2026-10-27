@@ -15,6 +15,7 @@
 | 目的 | 命令 |
 |---|---|
 | 解析 wiki 链接 | `lark-cli wiki +node-get --as user --node-token "<url>"` → 取 `data.node.obj_token` |
+| 修改文档或 Wiki 名称 | `drive +update-title --url '<原链接>' --title 'YYYYMMDD 需求主题'` |
 | 读大纲（含 block id） | `docs +fetch --doc <id> --scope outline --detail with-ids` |
 | 读指定章节 | `docs +fetch --doc <id> --scope section --start-block-id <id> --detail with-ids` |
 | 读区间（定章节尾部锚点） | `docs +fetch --doc <id> --scope range --start-block-id <起> --end-block-id <止> --detail with-ids` |
@@ -33,6 +34,17 @@
 | 官方语法指南 | `lark-cli skills read lark-doc/references/lark-doc-xml.md`（写复杂内容前必读） |
 
 评论读取、定位、发表与验证见 [评论协作](document-review.md)。`str_replace` 仅用于已确认唯一的简单文本；多块或媒体内容用块编辑。范围操作前检查起止边界，避免包含下一章节。预览请求可加 `--dry-run`，不据此声称服务端已写入。
+
+## 修改文档名称
+
+先按 [文档命名与标题验收](prd-authoring.md#文档命名与标题验收) 确定名称，并留存旧标题和正文。Wiki 使用原 `/wiki/` 链接原地改名，保留同一节点；普通文档使用原文档链接。执行前核对当前 CLI 的 `drive +update-title --help`，不要以正文块替换或复制新文档代替重命名。
+
+```bash
+lark-cli drive +update-title --as user --url '<原文档或Wiki链接>' \
+  --title 'YYYYMMDD 需求主题'
+```
+
+写入后用 `docs +fetch` 回读实际文档标题；Wiki 另用 `wiki +node-get` 核对节点标题，并按返回的 `space_id` 和 `parent_node_token` 读取该父目录的 `wiki +node-list`。仅改名称时，比较修改前后的正文、节点／文档标识和链接，确认保持原样。命令回执成功不能代替这些检查；未能核对父目录时单列未验证范围。
 
 ## 表格局部修订
 

@@ -2,10 +2,13 @@
 
 All notable changes to this skill are documented here. Release tags follow Semantic Versioning where practical.
 
-## Unreleased - 2026-10-22
+## v1.2.0 - 2026-10-27
 
 ### Added
 
+- Document-title checks in the skill entrypoint: inspect sibling naming conventions, use `YYYYMMDD Topic` when no convention exists, replace template placeholders, and preserve confirmed titles and dates during later revisions.
+- Guidance for concise topics, separate document/prototype versions, in-place Feishu/Wiki renaming, and verification of document, node, and parent-directory titles without changing the body or link.
+- README naming examples and CLI rename/read-back instructions. Metadata-only renames preserve the body version; body edits continue to use the existing version-history rules.
 - Numbered native heading hierarchy for nested PRD sections, including third and deeper levels, with outline checks and examples.
 - Acceptance groups organized by page or function and mapped to feature requirements, retaining prerequisites, actions, observable results, existing check states, and unresolved rules.
 - Guidance for concrete user-facing effect descriptions and read-only field rendering, scoped to the current confirmed requirements.
@@ -17,6 +20,7 @@ All notable changes to this skill are documented here. Release tags follow Seman
 
 ### Validation
 
+- Verified an authorized in-place title change through document, Wiki-node, and parent-directory reads; document body and target identifiers remained unchanged. No private document identifiers or content are included in this package.
 - Skill metadata, local documentation links, XML examples, and Git whitespace checks.
 - Official skill validation and relative-link/heading-anchor checks for the 2026-10-22 documentation update; no business-service operations were repeated while preparing it.
 - Public changes contain generic guidance only; business document content, screenshots, private identifiers, and credentials stay outside this repository.
