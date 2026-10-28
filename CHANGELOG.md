@@ -2,6 +2,14 @@
 
 All notable changes to this skill are documented here. Release tags follow Semantic Versioning where practical.
 
+## Unreleased
+
+### Fixed
+
+- Removed the fallback that allowed an em dash when the revision author was unknown. Require a verified maintainer name, resolve ambiguous identity before writing a revision entry, and reject empty or placeholder attribution.
+- Added evidence-based repair of historical author omissions and pre-write/post-write checks for date, version, maintainer, summary, table placement, and version-info consistency.
+- Linked the author-verification procedure from the skill workflow and delivery checklist, and documented it in the README.
+
 ## v1.2.0 - 2026-10-27
 
 ### Added
